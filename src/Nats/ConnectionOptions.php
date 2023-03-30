@@ -148,6 +148,7 @@ class ConnectionOptions
               'version'  => $this->version,
               'verbose'  => $this->verbose,
               'pedantic' => $this->pedantic,
+              'headers'  => true,
              ];
         if (empty($this->user) === false) {
             $a['user'] = $this->user;
