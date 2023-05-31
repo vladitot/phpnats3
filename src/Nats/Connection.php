@@ -381,6 +381,9 @@ class Connection
             }
         } else {
             $line = fgets($this->streamSocket);
+            if ($line === false) {
+                throw new \Exception('Can\'t read message from socket.');
+            }
         }
 
         if ($this->debug === true) {
