@@ -102,6 +102,10 @@ class Connection
      */
     private $subscriptions = [];
 
+    private $subscriptionsMessageCounters = [];
+
+    private $delayedSubscriptions = [];
+
 
     /**
      * Return the number of subscriptions available.
@@ -528,7 +532,19 @@ class Connection
         $sid = $this->randomGenerator->generateString(16);
         $msg = 'SUB '.$subject.' '.$sid;
         $this->send($msg);
-        $this->subscriptions[$sid] = $callback;
+        $this->subscriptionsMessageCounters[$sid] = 0;
+        $this->subscriptions[$sid] = function (Message $message) use ($sid, $callback) {
+            // inc number of received messages for subscriptions
+            $this->subscriptionsMessageCounters[$sid]++;
+
+            // call original callback
+            $callback($message);
+
+            // check if we need to clean delayed subscriptions
+            if (isset($this->delayedSubscriptions[$sid]) && $this->subscriptionsMessageCounters[$sid] >= $this->delayedSubscriptions[$sid]) {
+                unset($this->subscriptions[$sid], $this->subscriptionsMessageCounters[$sid], $this->delayedSubscriptions[$sid]);
+            }
+        };
         return $sid;
     }
 
@@ -566,8 +582,14 @@ class Connection
         }
 
         $this->send($msg);
-        if ($quantity === null) {
-            unset($this->subscriptions[$sid]);
+
+        $receivedMessagesNumber = $this->subscriptionsMessageCounters[$sid] ?? 0;
+        $needToCleanUpNow = $quantity === null || $receivedMessagesNumber >= $quantity;
+
+        if ($needToCleanUpNow) {
+            unset($this->subscriptions[$sid], $this->subscriptionsMessageCounters[$sid], $this->delayedSubscriptions[$sid]);
+        } else {
+            $this->delayedSubscriptions[$sid] = $quantity ?? 0;
         }
     }
 
