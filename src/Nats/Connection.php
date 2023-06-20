@@ -537,12 +537,14 @@ class Connection
             // inc number of received messages for subscriptions
             $this->subscriptionsMessageCounters[$sid]++;
 
-            // call original callback
-            $callback($message);
-
-            // check if we need to clean delayed subscriptions
-            if (isset($this->delayedSubscriptions[$sid]) && $this->subscriptionsMessageCounters[$sid] >= $this->delayedSubscriptions[$sid]) {
-                unset($this->subscriptions[$sid], $this->subscriptionsMessageCounters[$sid], $this->delayedSubscriptions[$sid]);
+            try {
+                // call original callback
+                $callback($message);
+            } finally {
+                // check if we need to clean delayed subscriptions
+                if (isset($this->delayedSubscriptions[$sid]) && $this->subscriptionsMessageCounters[$sid] >= $this->delayedSubscriptions[$sid]) {
+                    unset($this->subscriptions[$sid], $this->subscriptionsMessageCounters[$sid], $this->delayedSubscriptions[$sid]);
+                }
             }
         };
         return $sid;
