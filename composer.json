@@ -1,5 +1,5 @@
 {
-    "name": "vladitot/nats",
+    "name": "vladitot/nats-custom",
     "description": "A nats.io client in PHP",
     "type": "library",
     "minimum-stability": "dev",
